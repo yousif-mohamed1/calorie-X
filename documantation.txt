@@ -1,0 +1,163 @@
+documentation = """
+Nutrition-Based Recommendation System — Documentation
+=====================================================
+
+1. Overview
+-----------
+This project builds a nutrition-based food recommendation system.
+The system takes any food name (even misspelled) and:
+
+1. Finds the closest matching food in the dataset.
+2. Recommends nutritionally similar foods.
+
+It uses fuzzy matching + nutritional vector similarity.
+
+-----------------------------------------------------
+
+2. Fuzzy Matching (Correcting User Input)
+------------------------------------------
+Users often type names like:
+- "chiken brest"
+- "appl"
+- "ricee"
+
+We use RapidFuzz to match the user query to the closest food name.
+
+Steps:
+- Load all food names from the dataset
+- Compare the user text with each name
+- Pick the closest match based on similarity score
+
+Example:
+Input: "appl"
+Matched: "Apples, raw, with skin"
+
+-----------------------------------------------------
+
+3. Food Embeddings (Nutrition Vectors)
+---------------------------------------
+Every food is converted into a vector based on features like:
+
+- carbs  
+- fat  
+- protein  
+- fiber  
+- sodium  
+- iron  
+- magnesium  
+- calorie density  
+- macro ratios  
+- nutrient density  
+
+These vectors represent the nutritional identity of foods.
+Similar vectors → similar foods.
+
+-----------------------------------------------------
+
+4. Computing Nutritional Similarity
+------------------------------------
+Similarity is calculated using cosine similarity:
+
+- 1.0 → almost identical
+- 0.9 → very similar
+- 0.7 → somewhat similar
+- 0.1 → not similar
+
+The system compares your selected food with all other foods and ranks them.
+
+-----------------------------------------------------
+
+5. Recommendation Pipeline
+---------------------------
+Step 1 — User inputs a food  
+Step 2 — System finds the closest matching name  
+Step 3 — Convert food to its nutrition vector  
+Step 4 — Compare with all foods  
+Step 5 — Return top similar foods
+
+Example result:
+
+| food_name     | similarity | cluster |
+|---------------|------------|---------|
+| Pears, raw    | 0.89       | 1       |
+| Grapes        | 0.87       | 1       |
+| Mango         | 0.85       | 1       |
+
+-----------------------------------------------------
+
+6. Code Summary
+----------------
+
+6.1 Fuzzy Matching Function
+---------------------------
+def find_closest_food(query):
+    choices = df_clean['food_name'].values
+    match, score, idx = process.extractOne(query, choices, scorer=fuzz.WRatio)
+    return match
+
+6.2 Recommendation Function
+---------------------------
+def recommend(query, top_n=5):
+
+    food_name = find_closest_food(query)
+    idx = df_clean.index[df_clean['food_name'] == food_name][0]
+    food_vec = df_clean.loc[idx, 'embedding'].reshape(1, -1)
+
+    sims = cosine_similarity(food_vec, np.vstack(df_clean['embedding'])).flatten()
+    df_clean['similarity'] = sims
+
+    results = (
+        df_clean.sort_values(by='similarity', ascending=False)
+        [['food_name', 'category', 'similarity', 'cluster']]
+        .head(top_n+1)[1:]
+    )
+
+    print(f"Input: {query}\\nMatched: {food_name}")
+    return results
+
+-----------------------------------------------------
+
+7. Why This System Works Well
+------------------------------
+- Uses nutrients instead of text matching
+- Handles typos automatically
+- Works for partial names
+- Uses engineered nutritional features
+- Produces real, meaningful food alternatives
+
+-----------------------------------------------------
+
+8. Possible Improvements
+-------------------------
+- Goal-based recommendations (e.g., high-protein)
+- Deep learning food embeddings
+- Food image → nutrient prediction model
+- FastAPI backend
+- Cluster visualization with PCA
+
+-----------------------------------------------------
+
+9. Conclusion
+--------------
+This is a complete recommendation system that:
+- understands user input
+- finds the correct food
+- generates nutrition-based recommendations
+- is scalable and production-ready
+
+Perfect for:
+- health apps
+- diet planners
+- fitness tools
+- food analytics systems
+- recommendation research
+
+=====================================================
+END OF DOCUMENTATION
+"""
+
+# Write the documentation into a text file
+with open("nutrition_recommender_documentation.txt", "w", encoding="utf-8") as f:
+    f.write(documentation)
+
+print("Documentation file created: nutrition_recommender_documentation.txt")
